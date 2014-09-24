@@ -11,14 +11,18 @@ import Scalaz._
 
 object JsonSpecification extends Specification with ScalaCheck {
   // NOTE: List[Json] should be JsonArray, but it is failing to resolve under 2.10.0 with type alias.
+  def modNumber = prop((j: JNumber) => j.withNumber { number =>
+    JsonLong {{
+      val n = number.toInt
+      if (n === 0) (n + 1) else (n * 2)
+    }.toLong}} /== j)
 
   def is = "Json" ^
     "same value should be equal" ! prop((j: Json) =>
       j === j) ^
     "modified string should not be equal" ! prop((j: JString) =>
       j.withString(_ + "test") /== j) ^
-    "modified number should not be equal" ! prop((j: JNumber) =>
-      j.withNumber(number => if (number === 0.0d) number + 1 else number * 2) /== j) ^
+    "modified number should not be equal" ! modNumber
     "modified array should not be equal" ! prop((j: JArray) =>
       j.withArray(jEmptyArray :: _) /== j) ^
     "modified object should not be equal" ! prop((j: JObject) =>
@@ -43,8 +47,7 @@ object JsonSpecification extends Specification with ScalaCheck {
       !j.isArray || (e -->>: j).array.map(_.head) === e.some) ^
     "jBool isBool" ! prop((b: Boolean) =>
       jBool(b).isBool) ^
-    "jNumber isNumber" ! prop((n: JsonNumber) =>
-      jNumber(n).isNumber) ^
+    "jNumber isNumber" ! prop((n: JsonNumber) => JNumber(n).isNumber) ^
     "jString isString" ! prop((s: String) =>
       jString(s).isString) ^
     "jArray isArray" ! prop((a: List[Json]) =>

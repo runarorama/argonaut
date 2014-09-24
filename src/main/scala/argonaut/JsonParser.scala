@@ -49,7 +49,7 @@ object JsonParser {
         case (remainder, _) => "JSON contains invalid suffix content: %s".format(excerpt(json, remainder)).left
       }
     }
-    
+
     expectValue(json, 0).flatMap(parseResult)
   }
 
@@ -121,7 +121,7 @@ object JsonParser {
         else index
       }
     }
-    
+
     if (position >= stream.length) "JSON terminates unexpectedly".left
     else stream(position) match {
       case '[' => expectArray(stream, position + 1)
@@ -136,10 +136,10 @@ object JsonParser {
         if (numberEndIndex == position) unexpectedContent(stream, position)
         else {
           val numberAsString = stream.substring(position, numberEndIndex)
-          numberAsString
-            .parseDouble
-            .fold(nfe => "Value [%s] cannot be parsed into a number.".format(numberAsString).left,
-                  doubleValue => \/-((numberEndIndex, jNumber(doubleValue))))
+          (numberAsString.parseLong.map(JsonLong(_)) orElse
+           numberAsString.parseDouble.map(JsonDouble(_))).fold(
+            nfe => "Value [%s] cannot be parsed into a number.".format(numberAsString).left,
+            jn => \/-((numberEndIndex, jn.asJsonOrNull)))
         }
       }
     }
